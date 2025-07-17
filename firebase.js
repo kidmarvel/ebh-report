@@ -17,6 +17,8 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase
     appId: "1:458081825735:web:b56f8545f707d72d66dfe2"
   };
 
+//please work
+
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
