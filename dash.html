@@ -15,5 +15,16 @@
   <p>Choose an action:</p>
   <button onclick="window.location.href='submit.html'">Submit Grades</button>
   <button onclick="alert('Viewing is under construction')">View Submissions</button>
+  <button onclick="logout()" class="btn btn-accent">Logout</button>
+
+<script type="module">
+  import { auth, signOut } from './firebase.js';
+  
+  function logout() {
+    signOut(auth)
+      .then(() => window.location.href = 'login.html')
+      .catch((error) => alert('Logout failed: ' + error.message));
+  }
+</script>
 </body>
 </html>
