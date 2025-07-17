@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <script type="module" src="firebase.js"></script>
+</head>
+<body>
+  <h2>Login</h2>
+  <button id="loginBtn">Sign in with Google</button>
+
+  <script type="module">
+    import { auth, provider, signInWithPopup } from './firebase.js';
+    const loginBtn = document.getElementById('loginBtn');
+    loginBtn.addEventListener('click', async () => {
+      try {
+        await signInWithPopup(auth, provider);
+        window.location.href = 'dash.html';
+      } catch (error) {
+        alert('Login failed: ' + error.message);
+      }
+    });
+  </script>
+</body>
+</html>
