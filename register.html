@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - Loodle</title>
+  <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <script type="module" src="firebase.js"></script>
+</head>
+<body>
+  <main>
+    <h2>Create Account</h2>
+    <form id="registerForm">
+      <label>Email: <input type="email" id="email" required></label>
+      <label>Password: <input type="password" id="password" required minlength="6"></label>
+      <button type="submit" class="btn btn-primary">Register</button>
+    </form>
+    <p>Already have an account? <a href="login.html">Login here</a></p>
+  </main>
+
+  <script type="module">
+    import { auth, createUserWithEmailAndPassword } from './firebase.js';
+    
+    const registerForm = document.getElementById('registerForm');
+    
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        alert('Account created! Redirecting to dashboard...');
+        window.location.href = 'dash.html';
+      } catch (error) {
+        alert('Registration failed: ' + error.message);
+      }
+    });
+  </script>
+</body>
+</html>
