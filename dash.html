@@ -1,30 +1,163 @@
-<!-- dash.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard</title>
+  <title>Dashboard | Enid Bennett</title>
   <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script type="module" src="firebase.js"></script>
 </head>
 <body>
-  <h1>Grade Entry Dashboard</h1>
-  <p>Choose an action:</p>
-  <button onclick="window.location.href='submit.html'">Submit Grades</button>
-  <button onclick="alert('Viewing is under construction')">View Submissions</button>
-  <button onclick="logout()" class="btn btn-accent">Logout</button>
+  <div class="dashboard-container">
+    <header class="dashboard-header">
+      <div class="user-info">
+        <i class="fas fa-user-circle"></i>
+        <span id="userEmail">Loading...</span>
+      </div>
+      <h1 id="dashboardTitle">Dashboard</h1>
+    </header>
 
-<script type="module">
-  import { auth, signOut } from './firebase.js';
-  
-  function logout() {
-    signOut(auth)
-      .then(() => window.location.href = 'login.html')
-      .catch((error) => alert('Logout failed: ' + error.message));
-  }
-</script>
+    <main id="dashboardContent">
+      <!-- Content will be loaded dynamically based on role -->
+      <div class="loading-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Loading your dashboard...</p>
+      </div>
+    </main>
+
+    <footer class="dashboard-footer">
+      <button onclick="logout()" class="btn btn-logout">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </footer>
+  </div>
+
+  <script type="module">
+    import { auth, signOut, db } from './firebase.js';
+    import { getDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-lite.js";
+
+    // Get role from URL or Firebase
+    async function determineUserRole() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const roleParam = urlParams.get('role');
+      
+      if (roleParam) return roleParam;
+      
+      if (auth.currentUser) {
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        return userSnap.exists() ? userSnap.data().role : 'student';
+      }
+      
+      return 'student'; // Default fallback
+    }
+
+    // Render appropriate dashboard
+    async function renderDashboard() {
+      const role = await determineUserRole();
+      const userEmail = auth.currentUser?.email || 'User';
+      
+      document.getElementById('userEmail').textContent = userEmail;
+      
+      if (role === 'teacher') {
+        document.getElementById('dashboardTitle').textContent = 'Teacher Dashboard';
+        document.getElementById('dashboardContent').innerHTML = `
+          <section class="teacher-actions">
+            <h2><i class="fas fa-chalkboard-teacher"></i> Grade Management</h2>
+            <div class="action-grid">
+              <div class="action-card" onclick="window.location.href='submit.html'">
+                <i class="fas fa-edit"></i>
+                <h3>Submit Grades</h3>
+                <p>Enter new grades for your students</p>
+              </div>
+              <div class="action-card" onclick="window.location.href='class-management.html'">
+                <i class="fas fa-users"></i>
+                <h3>Class Roster</h3>
+                <p>View and manage your students</p>
+              </div>
+              <div class="action-card" onclick="window.location.href='reports.html'">
+                <i class="fas fa-chart-bar"></i>
+                <h3>Progress Reports</h3>
+                <p>Generate class performance analytics</p>
+              </div>
+            </div>
+          </section>
+        `;
+      } else {
+        document.getElementById('dashboardTitle').textContent = 'Student Portal';
+        document.getElementById('dashboardContent').innerHTML = `
+          <section class="student-grades">
+            <h2><i class="fas fa-user-graduate"></i> My Grades</h2>
+            <div class="grade-summary">
+              <div class="summary-card">
+                <h3>Current GPA</h3>
+                <p class="big-number" id="currentGPA">3.75</p>
+              </div>
+              <div class="summary-card">
+                <h3>Classes</h3>
+                <p class="big-number" id="classCount">5</p>
+              </div>
+            </div>
+            
+            <div class="recent-grades">
+              <h3>Recent Grades</h3>
+              <table class="grades-table">
+                <thead>
+                  <tr>
+                    <th>Class</th>
+                    <th>Assignment</th>
+                    <th>Grade</th>
+                    <th>Feedback</th>
+                  </tr>
+                </thead>
+                <tbody id="gradesTableBody">
+                  <!-- Grades will be loaded from Firebase -->
+                  <tr>
+                    <td colspan="4">Loading grades...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        `;
+        
+        // In a real app, you would load actual grades here
+        setTimeout(() => {
+          document.getElementById('gradesTableBody').innerHTML = `
+            <tr>
+              <td>Algebra II</td>
+              <td>Chapter 5 Test</td>
+              <td>A-</td>
+              <td>Great improvement!</td>
+            </tr>
+            <tr>
+              <td>Chemistry</td>
+              <td>Lab Report #3</td>
+              <td>B+</td>
+              <td>Thorough analysis</td>
+            </tr>
+          `;
+        }, 1000);
+      }
+    }
+
+    // Handle logout
+    function logout() {
+      signOut(auth)
+        .then(() => window.location.href = 'login.html')
+        .catch((error) => alert('Logout failed: ' + error.message));
+    }
+
+    // Initialize dashboard when auth state is ready
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        renderDashboard();
+      } else {
+        window.location.href = 'login.html';
+      }
+    });
+  </script>
 </body>
 </html>
