@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard | Enid Bennett</title>
+  <title>Dashboard</title>
   <link rel="stylesheet" href="styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -38,30 +38,39 @@
     import { auth, signOut, db } from './firebase.js';
     import { getDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-lite.js";
 
-    // Get role from URL or Firebase
-    async function determineUserRole() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const roleParam = urlParams.get('role');
-      
-      if (roleParam) return roleParam;
-      
-      if (auth.currentUser) {
-        const userRef = doc(db, 'users', auth.currentUser.uid);
-        const userSnap = await getDoc(userRef);
-        return userSnap.exists() ? userSnap.data().role : 'student';
-      }
-      
-      return 'student'; // Default fallback
-    }
+   // Replace the determineUserRole() function in dash.html with:
+async function verifyUserRole() {
+  const user = auth.currentUser;
+  if (!user) return null;
+
+  try {
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (!userDoc.exists()) throw new Error("User data not found");
+    
+    const userData = userDoc.data();
+    return {
+      email: user.email,
+      roles: userData.roles || [],
+      isTeacher: userData.roles.includes('teacher') || 
+                user.email.endsWith('@ebh.teach.edu')
+    };
+  } catch (error) {
+    console.error("Role verification failed:", error);
+    return null;
+  }
+}
+
 
     // Render appropriate dashboard
-    async function renderDashboard() {
-      const role = await determineUserRole();
-      const userEmail = auth.currentUser?.email || 'User';
+const userInfo = await verifyUserRole();
+if (!userInfo) {
+  await signOut(auth);
+  window.location.href = 'login.html';
+  return;
+}
       
-      document.getElementById('userEmail').textContent = userEmail;
-      
-      if (role === 'teacher') {
+      // document.getElementById('userEmail').textContent = userEmail;
+      if (userInfo.isTeacher) {
         document.getElementById('dashboardTitle').textContent = 'Teacher Dashboard';
         document.getElementById('dashboardContent').innerHTML = `
           <section class="teacher-actions">
