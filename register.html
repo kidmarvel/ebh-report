@@ -3,36 +3,59 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Register</title>
+  <title>Register - Enid Bennett</title>
   <link rel="stylesheet" href="styles.css">
-
   <script type="module" src="firebase.js"></script>
 </head>
 <body>
-  <main>
-    <h2>Create Account</h2>
+  <main class="auth-container">
+    <h1>Create Account</h1>
     <form id="registerForm">
+      <label>Full Name: <input type="text" id="fullName" required></label>
       <label>Email: <input type="email" id="email" required></label>
       <label>Password: <input type="password" id="password" required minlength="6"></label>
+      
+      <!-- Hidden role field determined by email domain -->
+      <input type="hidden" id="userRole">
+      
       <button type="submit" class="btn btn-primary">Register</button>
     </form>
-    <p>Already have an account? <a href="login.html">Login here</a></p>
   </main>
 
   <script type="module">
-    import { auth, createUserWithEmailAndPassword } from './firebase.js';
+    import { auth, db, createUserWithEmailAndPassword, doc, setDoc } from './firebase.js';
     
     const registerForm = document.getElementById('registerForm');
+    const emailField = document.getElementById('email');
+    
+    // Auto-detect role based on email domain
+    emailField.addEventListener('blur', () => {
+      const roleField = document.getElementById('userRole');
+      roleField.value = emailField.value.endsWith('@ebh.teach.edu') ? 'teacher' : 'student';
+    });
     
     registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = document.getElementById('email').value;
+      
+      const email = emailField.value;
       const password = document.getElementById('password').value;
+      const fullName = document.getElementById('fullName').value;
+      const role = document.getElementById('userRole').value || 'student';
       
       try {
-        await createUserWithEmailAndPassword(auth, email, password);
-        alert('Account created! Redirecting to dashboard...');
-        window.location.href = 'dash.html';
+        // 1. Create auth user
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        
+        // 2. Store user data with role
+        await setDoc(doc(db, "users", userCredential.user.uid), {
+          email: email,
+          fullName: fullName,
+          roles: [role],
+          createdAt: new Date().toISOString()
+        });
+        
+        alert(`Account created as ${role}! Redirecting...`);
+        window.location.href = `dash.html?role=${role}`;
       } catch (error) {
         alert('Registration failed: ' + error.message);
       }
